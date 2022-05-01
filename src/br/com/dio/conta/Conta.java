@@ -1,6 +1,7 @@
 package br.com.dio.conta;
 
 import br.com.dio.cliente.Cliente;
+import br.com.dio.conta.customExceptions.ContaBloqueada;
 import br.com.dio.conta.customExceptions.SaldoInsuficiente;
 
 public abstract class Conta implements Operacoes {
@@ -24,34 +25,23 @@ public abstract class Conta implements Operacoes {
     }
 
     @Override
-    public void depositar(double valor) {
-        this.saldo += valor;
+    public void depositar(double valor) throws ContaBloqueada {
+        if (this.verificaStatus()) this.saldo += valor;
     }
 
 
     @Override
-    public void sacar(double valor) throws SaldoInsuficiente {
-        if (!this.ativada || this.bloqueado) System.out.println("Erro: operação negada. Esta conta se encontra inativa ou bloqueada");
-        else {
-            if (valor <= this.saldo) this.saldo -= valor;
-            else throw new SaldoInsuficiente(this);
-        }
+    public void sacar(double valor) throws ContaBloqueada, SaldoInsuficiente {
+        if (valor <= this.saldo && this.verificaStatus()) this.saldo -= valor;
+        else throw new SaldoInsuficiente(this);
     }
 
     @Override
-    public void transferir(double valor, Conta contaDestino) throws SaldoInsuficiente {
-
-        if (!this.ativada || this.bloqueado) System.out.println("Erro: operação negada. Esta conta se encontra inativa ou bloqueada");
-        else if (contaDestino.isBloqueado() || !contaDestino.isAtivada()) System.out.println("Erro: conta destino encontra-se bloqueada ou desativada");
-        else {
-            if (valor <= this.saldo) {
-                this.saldo -= valor;
-                contaDestino.depositar(valor);
-            } else {
-                throw new SaldoInsuficiente(this);
-            }
-        }
-
+    public void transferir(double valor, Conta contaDestino) throws SaldoInsuficiente, ContaBloqueada {
+        if (valor <= this.saldo && this.verificaStatus()) {
+            contaDestino.depositar(valor);
+            this.saldo -= valor;
+        } else throw new SaldoInsuficiente(this);
     }
 
     protected String getExtratoConta() {
@@ -88,6 +78,12 @@ public abstract class Conta implements Operacoes {
         if (this.saldo > 0) System.out.println("Erro: esta conta não pode ser desativada, pois há saldo de R$" + this.saldo);
         else if (this.saldo < 0) System.out.println("ERRO: esta conta não pode ser desativada, pois há saldo negativado de R$" + this.saldo);
         else this.ativada = false;
+    }
+
+    private boolean verificaStatus() throws ContaBloqueada {
+        if (this.bloqueado) throw new ContaBloqueada(this);
+        else if (!this.ativada) System.out.println("Erro: operação negada. Esta conta se encontra inativa.");
+        return true;
     }
 
     public int getNumeroConta() {
