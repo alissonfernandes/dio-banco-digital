@@ -4,6 +4,7 @@ import br.com.dio.cliente.Cliente;
 import br.com.dio.conta.Conta;
 import br.com.dio.conta.ContaCorrente;
 import br.com.dio.conta.ContaPoupanca;
+import br.com.dio.conta.customExceptions.ContaNaoPodeSerDesativada;
 import br.com.dio.enums.ContaTipo;
 
 public class Banco {
@@ -21,7 +22,7 @@ public class Banco {
         conta.desbloquearConta();
     }
 
-    public void desativarConta(Conta conta) {
+    public void desativarConta(Conta conta) throws ContaNaoPodeSerDesativada {
         conta.desativarConta();
     }
 }

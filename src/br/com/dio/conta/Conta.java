@@ -2,6 +2,8 @@ package br.com.dio.conta;
 
 import br.com.dio.cliente.Cliente;
 import br.com.dio.conta.customExceptions.ContaBloqueada;
+import br.com.dio.conta.customExceptions.ContaDesativada;
+import br.com.dio.conta.customExceptions.ContaNaoPodeSerDesativada;
 import br.com.dio.conta.customExceptions.SaldoInsuficiente;
 
 public abstract class Conta implements Operacoes {
@@ -25,19 +27,19 @@ public abstract class Conta implements Operacoes {
     }
 
     @Override
-    public void depositar(double valor) throws ContaBloqueada {
+    public void depositar(double valor) throws ContaBloqueada, ContaDesativada {
         if (this.verificaStatus()) this.saldo += valor;
     }
 
 
     @Override
-    public void sacar(double valor) throws ContaBloqueada, SaldoInsuficiente {
+    public void sacar(double valor) throws ContaBloqueada, SaldoInsuficiente, ContaDesativada {
         if (valor <= this.saldo && this.verificaStatus()) this.saldo -= valor;
         else throw new SaldoInsuficiente(this);
     }
 
     @Override
-    public void transferir(double valor, Conta contaDestino) throws SaldoInsuficiente, ContaBloqueada {
+    public void transferir(double valor, Conta contaDestino) throws SaldoInsuficiente, ContaBloqueada, ContaDesativada {
         if (valor <= this.saldo && this.verificaStatus()) {
             contaDestino.depositar(valor);
             this.saldo -= valor;
@@ -74,15 +76,15 @@ public abstract class Conta implements Operacoes {
         return this.ativada;
     }
 
-    public void desativarConta() {
-        if (this.saldo > 0) System.out.println("Erro: esta conta não pode ser desativada, pois há saldo de R$" + this.saldo);
-        else if (this.saldo < 0) System.out.println("ERRO: esta conta não pode ser desativada, pois há saldo negativado de R$" + this.saldo);
+    public void desativarConta() throws ContaNaoPodeSerDesativada {
+        if (this.saldo > 0) throw new ContaNaoPodeSerDesativada(this, "Há saldo em conta");
+        else if (this.saldo < 0) throw new ContaNaoPodeSerDesativada(this, "Há saldo negativado em conta");
         else this.ativada = false;
     }
 
-    private boolean verificaStatus() throws ContaBloqueada {
+    private boolean verificaStatus() throws ContaBloqueada, ContaDesativada {
         if (this.bloqueado) throw new ContaBloqueada(this);
-        else if (!this.ativada) System.out.println("Erro: operação negada. Esta conta se encontra inativa.");
+        else if (!this.ativada) throw new ContaDesativada(this);
         return true;
     }
 
