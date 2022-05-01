@@ -1,6 +1,7 @@
 package br.com.dio.conta;
 
 import br.com.dio.cliente.Cliente;
+import br.com.dio.conta.customExceptions.SaldoInsuficiente;
 
 public abstract class Conta implements Operacoes {
 
@@ -29,16 +30,16 @@ public abstract class Conta implements Operacoes {
 
 
     @Override
-    public void sacar(double valor) {
+    public void sacar(double valor) throws SaldoInsuficiente {
         if (!this.ativada || this.bloqueado) System.out.println("Erro: operação negada. Esta conta se encontra inativa ou bloqueada");
         else {
             if (valor <= this.saldo) this.saldo -= valor;
-            else System.out.println("Saldo insuficiente");
+            else throw new SaldoInsuficiente(this);
         }
     }
 
     @Override
-    public void transferir(double valor, Conta contaDestino) {
+    public void transferir(double valor, Conta contaDestino) throws SaldoInsuficiente {
 
         if (!this.ativada || this.bloqueado) System.out.println("Erro: operação negada. Esta conta se encontra inativa ou bloqueada");
         else if (contaDestino.isBloqueado() || !contaDestino.isAtivada()) System.out.println("Erro: conta destino encontra-se bloqueada ou desativada");
@@ -47,7 +48,7 @@ public abstract class Conta implements Operacoes {
                 this.saldo -= valor;
                 contaDestino.depositar(valor);
             } else {
-                System.out.println("Saldo insuficiente");
+                throw new SaldoInsuficiente(this);
             }
         }
 
@@ -87,6 +88,18 @@ public abstract class Conta implements Operacoes {
         if (this.saldo > 0) System.out.println("Erro: esta conta não pode ser desativada, pois há saldo de R$" + this.saldo);
         else if (this.saldo < 0) System.out.println("ERRO: esta conta não pode ser desativada, pois há saldo negativado de R$" + this.saldo);
         else this.ativada = false;
+    }
+
+    public int getNumeroConta() {
+        return conta;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public int getAgencia() {
+        return agencia;
     }
 
     @Override
