@@ -5,6 +5,11 @@ import br.com.dio.conta.customExceptions.ContaBloqueada;
 import br.com.dio.conta.customExceptions.ContaDesativada;
 import br.com.dio.conta.customExceptions.ContaNaoPodeSerDesativada;
 import br.com.dio.conta.customExceptions.SaldoInsuficiente;
+import br.com.dio.conta.historico.Transacao;
+import br.com.dio.enums.TipoOperacao;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class Conta implements Operacoes {
 
@@ -17,6 +22,8 @@ public abstract class Conta implements Operacoes {
     private Cliente cliente;
     private boolean bloqueado;
     private boolean ativada;
+    List<Transacao> historicoTransacoes;
+
 
     public Conta(Cliente cliente) {
         this.agencia = AGENCIA_PADRAO;
@@ -24,26 +31,39 @@ public abstract class Conta implements Operacoes {
         this.cliente = cliente;
         this.bloqueado = false;
         this.ativada = true;
+        this.historicoTransacoes = new ArrayList<>();
     }
 
     @Override
-    public void depositar(double valor) throws ContaBloqueada, ContaDesativada {
-        if (this.verificaStatus()) this.saldo += valor;
+    public void depositar(double valor, Conta origem) throws ContaBloqueada, ContaDesativada {
+        if (this.verificaStatus()) {
+            this.saldo += valor;
+            addHistoricoTransacao(TipoOperacao.ENTRADA, origem, this, valor);
+        }
     }
 
 
     @Override
     public void sacar(double valor) throws ContaBloqueada, SaldoInsuficiente, ContaDesativada {
-        if (valor <= this.saldo && this.verificaStatus()) this.saldo -= valor;
+        if (valor <= this.saldo && this.verificaStatus()) {
+            this.saldo -= valor;
+            this.addHistoricoTransacao(TipoOperacao.SAIDA, this, this, valor);
+        }
         else throw new SaldoInsuficiente(this);
     }
 
     @Override
     public void transferir(double valor, Conta contaDestino) throws SaldoInsuficiente, ContaBloqueada, ContaDesativada {
         if (valor <= this.saldo && this.verificaStatus()) {
-            contaDestino.depositar(valor);
+            contaDestino.depositar(valor, this);
             this.saldo -= valor;
+            this.addHistoricoTransacao(TipoOperacao.SAIDA, this, contaDestino, valor);
         } else throw new SaldoInsuficiente(this);
+    }
+
+    private void addHistoricoTransacao(TipoOperacao tipoOperacao, Conta origem, Conta destino, double valor){
+        Transacao tra = new Transacao(tipoOperacao, origem, destino, valor);
+        this.historicoTransacoes.add(tra);
     }
 
     protected String getExtratoConta() {
@@ -98,6 +118,10 @@ public abstract class Conta implements Operacoes {
 
     public int getAgencia() {
         return agencia;
+    }
+
+    public List<Transacao> getHistoricoTransacoes() {
+        return historicoTransacoes;
     }
 
     @Override

@@ -6,7 +6,7 @@ import br.com.dio.conta.customExceptions.SaldoInsuficiente;
 
 public interface Operacoes {
 
-    void depositar(double valor) throws ContaBloqueada, ContaDesativada;
+    void depositar(double valor, Conta origem) throws ContaBloqueada, ContaDesativada;
 
     void sacar(double valor) throws SaldoInsuficiente, ContaBloqueada, ContaDesativada;
 
